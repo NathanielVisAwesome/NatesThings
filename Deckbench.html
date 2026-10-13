@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deckbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Spectral:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dde1e8; --panel:#f5f6f9; --panel2:#e9ecf2; --ink:#1b2030; --mute:#5d6578; --line:#c6ccda;
+  --accent:#27467a; --accent-ink:#fff; --warn:#b3361f; --ok:#2c7a4b;
+  --band:linear-gradient(90deg,#9aa1b2,#9aa1b2);
+  --serif:'Spectral',Georgia,serif; --sans:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#13161e; --panel:#1b202b; --panel2:#242a37; --ink:#e8ebf2; --mute:#98a1b5; --line:#323a4b;
+    --accent:#8fb2f2; --accent-ink:#0f1624; --warn:#ff8f78; --ok:#7bd29d; }
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.band{height:7px;background:var(--band);transition:background .5s;flex:none}
+header.top{flex:none;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{font:700 20px var(--serif);margin-right:4px}
+.top input[type=text],.top select,.field{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+#deckName{width:220px;font-weight:600}
+.spacer{flex:1}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 11px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:2px 8px;font-size:12px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(330px,420px) 1fr}
+.pane{overflow:auto;min-height:0}
+#deckPane{background:var(--panel);border-right:1px solid var(--line);padding:14px}
+#browser{padding:14px 18px 40px}
+h2{font:700 17px var(--serif);margin:0 0 8px}
+h3{font:700 14px var(--serif);margin:16px 0 4px;display:flex;justify-content:space-between}
+h3 span{font:500 12px var(--sans);color:var(--mute)}
+.cmdr{display:flex;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px}
+.cmdr img{width:56px;border-radius:4px;flex:none}
+.cmdr .nm{font:700 15px var(--serif)}
+.cmdr.empty{color:var(--mute);border-style:dashed}
+.meter{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.meter i{display:block;height:100%;background:var(--accent)}
+.meter.over i{background:var(--warn)}
+.statline{display:flex;justify-content:space-between;margin:6px 0 10px;color:var(--mute)}
+.statline b{color:var(--ink)}
+.curve{display:flex;gap:5px;align-items:flex-end;height:74px;margin-top:6px}
+.curve .bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;font-size:11px;color:var(--mute)}
+.curve .bar i{display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px;opacity:.85}
+.pipbars{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.pipbars span{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--mute)}
+.sym{width:16px;height:16px;vertical-align:-3px;margin-right:1px}
+.issues{margin:10px 0 0;padding:8px 10px;border-radius:6px;background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);font-size:12.5px}
+.row{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 8px;align-items:center;padding:3px 0;border-bottom:1px solid var(--line)}
+.row .q{display:flex;align-items:center;gap:2px}
+.row .q button{width:20px;height:20px;line-height:1;padding:0;border:1px solid var(--line);background:var(--panel2);border-radius:4px}
+.row .q b{min-width:18px;text-align:center}
+.row .nm{font-family:var(--serif);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .px{color:var(--mute);font-size:12px;min-width:44px;text-align:right}
+.row.bad .nm{color:var(--warn)}
+.row small.flag{color:var(--warn);grid-column:2 / -1;margin-top:-4px;font-size:11.5px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 14px;font-weight:600;color:var(--mute)}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--accent)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.controls .field{flex:1;min-width:220px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:3px 11px;font-size:13px}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.opts{display:flex;gap:16px;flex-wrap:wrap;color:var(--mute);font-size:13px;margin-bottom:6px}
+.opts label{display:inline-flex;gap:5px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px;margin-top:10px}
+.tile{display:flex;flex-direction:column;gap:5px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;position:relative;cursor:pointer}
+.tile:hover{border-color:var(--accent)}
+.tile img{width:100%;aspect-ratio:488/680;border-radius:7px;background:var(--panel2);display:block}
+.tile .noimg{aspect-ratio:488/680;border-radius:7px;background:var(--panel2);display:grid;place-items:center;text-align:center;padding:8px;font-family:var(--serif)}
+.tile .t{font:600 13px/1.25 var(--serif)}
+.tile .sub{font-size:12px;color:var(--mute);display:flex;justify-content:space-between;gap:4px}
+.tile .acts{display:flex;gap:5px}
+.tile .acts button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:3px 0;font-size:12px}
+.tile .acts button:hover{border-color:var(--accent)}
+.tile .badge{position:absolute;top:10px;left:10px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;display:none}
+.tile.has{opacity:.6}
+.tile.has .badge{display:block}
+.edh .bar{height:4px;background:var(--panel2);border-radius:9px;overflow:hidden}
+.edh .bar i{display:block;height:100%;background:var(--ok)}
+.edh{font-size:12px;color:var(--mute)}
+.edh b{color:var(--ink)}
+.edh .syn{color:var(--ok);margin-left:6px}
+.sec{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:10px}
+.sec>button.sh{width:100%;display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:10px 12px;font:700 15px var(--serif)}
+.sec>button.sh small{font:400 12px var(--sans);color:var(--mute);margin-left:8px}
+.sec .body{padding:0 12px 12px}
+.msg{padding:26px 10px;text-align:center;color:var(--mute)}
+.msg b{display:block;color:var(--ink);font:700 16px var(--serif);margin-bottom:4px}
+.msg.err b{color:var(--warn)}
+#peek{position:fixed;z-index:50;width:264px;pointer-events:none;display:none;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+#peek img{width:100%;display:block;border-radius:12px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+#toast.on{opacity:1}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:0;width:min(720px,94vw)}
+dialog::backdrop{background:rgba(10,12,20,.55)}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.dhead h2{margin:0}
+#dbody{padding:14px 16px 16px}
+#dbody textarea{width:100%;height:300px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.hand{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.hand img{width:100%;border-radius:6px}
+.drow{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+@media (max-width:860px){
+  html,body{height:auto}
+  main{display:block}
+  .pane{overflow:visible}
+  #deckPane{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="band" id="band"></div>
+<header class="top">
+  <span class="brand">Deckbench</span>
+  <input type="text" id="deckName" aria-label="Deck name" placeholder="Deck name">
+  <select id="format" aria-label="Format"></select>
+  <span class="spacer"></span>
+  <button class="btn" data-act="import">Import list</button>
+  <button class="btn" data-act="export">Export</button>
+  <button class="btn" data-act="hand">Sample hand</button>
+  <button class="btn" data-act="clear">New deck</button>
+  <button class="btn" data-act="settings">Connection</button>
+</header>
+
+<main>
+  <section class="pane" id="deckPane" aria-label="Deck"></section>
+  <section class="pane" id="browser" aria-label="Card browser">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabSearch" data-act="tab" data-tab="search" aria-selected="true">Scryfall search</button>
+      <button role="tab" id="tabEdh" data-act="tab" data-tab="edh" aria-selected="false">EDHREC picks</button>
+    </div>
+    <div id="panelSearch">
+      <div class="controls">
+        <input class="field" id="q" type="search" placeholder="Card name or Scryfall syntax, like t:goblin c:r cmc<=3" aria-label="Search cards">
+        <select class="field" id="order" aria-label="Sort" style="flex:none;min-width:0">
+          <option value="edhrec">Most played</option>
+          <option value="name">Name</option>
+          <option value="cmc">Mana value</option>
+          <option value="usd">Price</option>
+        </select>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="opts">
+        <label id="idWrap"><input type="checkbox" id="optId" checked> Match commander colors</label>
+        <label><input type="checkbox" id="optLegal" checked> <span id="legalLabel">Legal in format</span></label>
+      </div>
+      <div id="results"></div>
+    </div>
+    <div id="panelEdh" hidden></div>
+  </section>
+</main>
+
+<div id="peek"><img alt=""></div>
+<div id="toast" role="status"></div>
+<dialog id="dlg">
+  <div class="dhead"><h2 id="dtitle"></h2><button class="btn small" data-act="close">Close</button></div>
+  <div id="dbody"></div>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const money = n => n ? '$' + n.toFixed(2) : '';
+const front = n => String(n).split(' // ')[0];
+
+const FORMATS = {
+  commander:{label:'Commander', size:100, copies:1},
+  standard:{label:'Standard', size:60, copies:4},
+  pioneer:{label:'Pioneer', size:60, copies:4},
+  modern:{label:'Modern', size:60, copies:4},
+  legacy:{label:'Legacy', size:60, copies:4},
+  pauper:{label:'Pauper', size:60, copies:4}
+};
+const TYPE_ORDER = ['Creature','Planeswalker','Battle','Instant','Sorcery','Artifact','Enchantment','Land','Other'];
+const MANA = {W:'#f2e8a8', U:'#5aa9dc', B:'#3b3a3f', R:'#d9573b', G:'#3f9a5b'};
+const CHIPS = [
+  {id:'cmd', label:'Commanders', q:'is:commander'},
+  {id:'ramp', label:'Ramp', q:'otag:ramp'},
+  {id:'draw', label:'Card draw', q:'otag:draw'},
+  {id:'removal', label:'Removal', q:'otag:removal'},
+  {id:'wipe', label:'Board wipes', q:'otag:sweeper'},
+  {id:'land', label:'Lands', q:'t:land'}
+];
+
+/* ---------- state ---------- */
+const state = {
+  deck:{name:'Untitled deck', format:'commander', commander:null, cards:{}},
+  tab:'search',
+  search:{q:'', chips:[], order:'edhrec', match:true, legal:true, results:[], next:null, total:0, status:'idle', error:''},
+  edh:{status:'idle', slug:'', theme:'', themes:[], lists:[], open:[0,1], error:'', hideOwned:false, token:0},
+  settings:{proxy:''}
+};
+const cache = new Map();        // lowercased name -> slim card
+const missing = new Set();      // names Scryfall couldn't resolve
+const resolving = new Set();
+
+/* ---------- persistence ---------- */
+const KEY = 'deckbench.v1';
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({deck:state.deck, settings:state.settings})); }catch(e){} }
+function load(){
+  try{
+    const j = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if(j){ Object.assign(state.deck, j.deck || {}); Object.assign(state.settings, j.settings || {}); }
+  }catch(e){}
+  if(state.deck.commander) remember(state.deck.commander, true);
+  Object.values(state.deck.cards).forEach(e => remember(e.card, true));
+}
+
+/* ---------- Scryfall ---------- */
+let nextSlot = 0;
+async function sf(path, opts){
+  const now = Date.now(), at = Math.max(now, nextSlot);
+  nextSlot = at + 110;                       // stay under Scryfall's rate guidance
+  if(at > now) await sleep(at - now);
+  const url = path.startsWith('http') ? path : 'https://api.scryfall.com' + path;
+  const r = await fetch(url, opts);
+  if(!r.ok){
+    let j = {}; try{ j = await r.json(); }catch(e){}
+    const err = new Error(j.details || ('Scryfall returned ' + r.status)); err.status = r.status; throw err;
+  }
+  return r.json();
+}
+function slim(c){
+  const f0 = (c.card_faces && c.card_faces[0]) || {};
+  const iu = c.image_uris || f0.image_uris || {};
+  return {
+    id:c.id, name:c.name, type:c.type_line || f0.type_line || '', cost:c.mana_cost || f0.mana_cost || '',
+    cmc:c.cmc || 0, ci:c.color_identity || [], img:iu.normal || '', sm:iu.small || iu.normal || '',
+    usd:parseFloat((c.prices && (c.prices.usd || c.prices.usd_foil)) || 0) || 0,
+    legal:c.legalities || {}, text:c.oracle_text || f0.oracle_text || ''
+  };
+}
+function remember(c, already){
+  const s = already ? c : slim(c);
+  cache.set(s.name.toLowerCase(), s);
+  if(s.name.includes(' // ')) cache.set(front(s.name).toLowerCase(), s);
+  return s;
+}
+const getCard = n => cache.get(String(n).toLowerCase()) || cache.get(front(n).toLowerCase());
+async function resolveNames(names){
+  const need = [...new Set(names)].filter(n => !getCard(n) && !missing.has(n.toLowerCase()));
+  for(let i = 0; i < need.length; i += 75){
+    const batch = need.slice(i, i + 75);
+    const j = await sf('/cards/collection', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({identifiers:batch.map(name => ({name}))})});
+    j.data.forEach(c => remember(c));
+    (j.not_found || []).forEach(x => missing.add(String(x.name || '').toLowerCase()));
+  }
+}
+
+/* ---------- EDHREC ---------- */
+function slug(name){
+  return front(name).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/['’,.]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+async function edhFetch(path){
+  const url = 'https://json.edhrec.com/pages/' + path;
+  const target = state.settings.proxy ? state.settings.proxy + encodeURIComponent(url) : url;
+  const r = await fetch(target);
+  if(!r.ok) throw Object.assign(new Error(r.status === 404 ? 'EDHREC has no page for this commander and filter.' : 'EDHREC returned ' + r.status + '.'), {http:true});
+  return r.json();
+}
+async function loadEdh(force){
+  const e = state.edh, d = state.deck;
+  if(!d.commander){ e.status = 'none'; renderEdh(); return; }
+  const sl = slug(d.commander.name);
+  if(!force && e.slug === sl && e.status === 'ready') return;
+  const token = ++e.token;
+  e.status = 'loading'; e.slug = sl; renderEdh();
+  try{
+    const j = await edhFetch('commanders/' + sl + (e.theme ? '/' + e.theme : '') + '.json');
+    if(token !== e.token) return;
+    const jd = (j.container && j.container.json_dict) || j;
+    const lists = (jd.cardlists || []).map(l => ({
+      header:l.header, tag:l.tag,
+      cards:(l.cardviews || []).map(c => ({name:c.name, inc:c.inclusion, pot:c.potential_decks, decks:c.num_decks, syn:c.synergy}))
+    })).filter(l => l.cards.length);
+    if(!e.theme){
+      const tl = ((j.panels && j.panels.taglinks) || []).filter(t => t.slug && t.value);
+      e.themes = tl.map(t => ({slug:t.slug, label:t.value + (t.count ? ' (' + t.count + ')' : '')}));
+    }
+    e.lists = lists; e.open = lists.slice(0, 2).map((_, i) => i); e.status = lists.length ? 'ready' : 'empty';
+  }catch(err){
+    if(token !== e.token) return;
+    e.status = 'error'; e.error = err.http ? err.message : 'blocked';
+  }
+  renderEdh();
+}
+
+/* ---------- deck logic ---------- */
+const F = () => FORMATS[state.deck.format];
+const count = () => Object.values(state.deck.cards).reduce((a, e) => a + e.qty, 0) + (state.deck.commander ? 1 : 0);
+const isBasic = c => /Basic Land/.test(c.type) || /any number of cards named/i.test(c.text);
+const canCmdr = c => (/Legendary/.test(c.type) && /Creature/.test(c.type)) || /can be your commander/i.test(c.text);
+const qtyOf = c => (state.deck.cards[c.name] ? state.deck.cards[c.name].qty : 0) + (state.deck.commander && state.deck.commander.name === c.name ? 1 : 0);
+function primaryType(t){
+  const main = t.split('—')[0];
+  if(/Land/.test(main)) return 'Land';
+  for(const k of ['Creature','Planeswalker','Battle','Instant','Sorcery','Artifact','Enchantment']) if(main.includes(k)) return k;
+  return 'Other';
+}
+function addCard(card, n = 1, silent = false){
+  const d = state.deck, max = isBasic(card) ? Infinity : F().copies;
+  const have = qtyOf(card);
+  if(have + n > max){ if(!silent) toast(d.format === 'commander' ? 'Commander decks are singleton.' : 'Four copies is the limit.'); return false; }
+  const e = d.cards[card.name];
+  if(e) e.qty += n; else d.cards[card.name] = {card, qty:n};
+  if(!silent) commit(); 
+  return true;
+}
+function setCommander(card){
+  const d = state.deck;
+  if(d.format !== 'commander') return;
+  if(d.cards[card.name]) delete d.cards[card.name];
+  d.commander = card; state.edh.theme = ''; state.edh.themes = []; state.edh.status = 'idle';
+  commit(); loadEdh(true); runSearch();
+}
+function commit(){ renderAll(); save(); }
+
+/* ---------- rendering: shared ---------- */
+function pips(cost){
+  return (cost || '').replace(/\{([^}]+)\}/g, (m, s) =>
+    `<img class="sym" src="https://svgs.scryfall.io/card-symbols/${esc(s.replace('/', ''))}.svg" alt="{${esc(s)}}">`);
+}
+function issuesFor(c){
+  const d = state.deck, out = [];
+  if(d.commander && c.ci.some(x => !d.commander.ci.includes(x))) out.push('Outside commander colors');
+  const l = c.legal[d.format];
+  if(l && l !== 'legal' && l !== 'restricted') out.push(l === 'banned' ? 'Banned in ' + F().label : 'Not legal in ' + F().label);
+  return out;
+}
+function tileHTML(c, extra){
+  const cm = state.deck.format === 'commander' && canCmdr(c);
+  return `<div class="tile" data-name="${esc(c.name)}" data-act="add">
+    ${c.sm ? `<img loading="lazy" src="${esc(c.sm)}" alt="${esc(c.name)}">` : `<div class="noimg">${esc(c.name)}</div>`}
+    <span class="badge"></span>
+    <div class="t">${esc(c.name)}</div>
+    ${extra || ''}
+    <div class="sub"><span>${pips(c.cost)}</span><span>${money(c.usd)}</span></div>
+    <div class="acts"><button data-act="add">Add</button>${cm ? '<button data-act="cmdr">Commander</button>' : ''}</div>
+  </div>`;
+}
+function refreshBadges(){
+  document.querySelectorAll('.tile').forEach(t => {
+    const c = getCard(t.dataset.name); const n = c ? qtyOf(c) : 0;
+    t.classList.toggle('has', n > 0);
+    const b = t.querySelector('.badge'); if(b) b.textContent = n > 1 ? 'In deck x' + n : 'In deck';
+  });
+}
+
+/* ---------- rendering: header ---------- */
+function renderTop(){
+  const d = state.deck;
+  const ids = d.commander ? d.commander.ci : [];
+  const stops = ids.map(c => MANA[c]);
+  $('#band').style.setProperty('--band', 'linear-gradient(90deg,' + (stops.length ? (stops.length === 1 ? stops[0] + ',' + stops[0] : stops.join(',')) : '#9aa1b2,#9aa1b2') + ')');
+  $('#band').style.background = 'var(--band)';
+  $('#idWrap').hidden = !(d.format === 'commander' && d.commander);
+  $('#legalLabel').textContent = 'Legal in ' + F().label;
+  if(state.search.chips.length === 0) { /* noop */ }
+}
+
+/* ---------- rendering: deck pane ---------- */
+function renderDeck(){
+  const d = state.deck, size = F().size, total = count();
+  const entries = Object.values(d.cards);
+  const nonland = entries.filter(e => primaryType(e.card.type) !== 'Land');
+  const curve = Array(8).fill(0); let cmcSum = 0, cmcN = 0;
+  const pipC = {W:0,U:0,B:0,R:0,G:0};
+  nonland.forEach(e => {
+    curve[Math.min(7, Math.floor(e.card.cmc))] += e.qty; cmcSum += e.card.cmc * e.qty; cmcN += e.qty;
+    (e.card.cost.match(/\{[^}]+\}/g) || []).forEach(s => { 'WUBRG'.split('').forEach(k => { if(s.includes(k)) pipC[k] += e.qty; }); });
+  });
+  const maxC = Math.max(1, ...curve);
+  const price = entries.reduce((a, e) => a + e.card.usd * e.qty, 0) + (d.commander ? d.commander.usd : 0);
+  const bad = [];
+  entries.forEach(e => { const i = issuesFor(e.card); if(i.length) bad.push([e.card.name, i]); });
+  const offId = bad.filter(b => b[1].includes('Outside commander colors')).length;
+  const illegal = bad.filter(b => b[1].some(x => /legal|Banned/.test(x))).length;
+
+  let h = '';
+  if(d.format === 'commander'){
+    h += d.commander
+      ? `<div class="cmdr" data-name="${esc(d.commander.name)}"><img src="${esc(d.commander.sm)}" alt=""><div style="flex:1"><div class="nm">${esc(d.commander.name)}</div><div>${pips(d.commander.cost)}</div><div style="color:var(--mute);font-size:12px">${esc(d.commander.type)}</div></div><button class="btn small" data-act="rmcmdr">Remove</button></div>`
+      : `<div class="cmdr empty">No commander yet. Search for a legendary creature and choose Commander.</div>`;
+  }
+  h += `<div class="statline" style="margin-top:14px"><span><b>${total}</b> of ${size} cards</span><span>${price ? '<b>' + money(price) + '</b> total' : ''}</span></div>
+    <div class="meter ${total > size ? 'over' : ''}"><i style="width:${Math.min(100, total / size * 100)}%"></i></div>`;
+  if(offId || illegal){
+    h += `<div class="issues">${offId ? offId + ' card' + (offId > 1 ? 's' : '') + ' outside your commander\u2019s colors. ' : ''}${illegal ? illegal + ' not legal in ' + F().label + '.' : ''}</div>`;
+  }
+  h += `<h3>Mana curve <span>${cmcN ? 'Average ' + (cmcSum / cmcN).toFixed(2) : ''}</span></h3>
+    <div class="curve">${curve.map((n, i) => `<div class="bar" title="${n} cards"><span>${n || ''}</span><i style="height:${n / maxC * 62}px"></i><span>${i === 7 ? '7+' : i}</span></div>`).join('')}</div>
+    <div class="pipbars">${Object.keys(pipC).filter(k => pipC[k]).map(k => `<span><img class="sym" src="https://svgs.scryfall.io/card-symbols/${k}.svg" alt="${k}">${pipC[k]}</span>`).join('')}</div>`;
+
+  const groups = {};
+  entries.forEach(e => (groups[primaryType(e.card.type)] = groups[primaryType(e.card.type)] || []).push(e));
+  TYPE_ORDER.forEach(t => {
+    const g = groups[t]; if(!g) return;
+    g.sort((a, b) => a.card.cmc - b.card.cmc || a.card.name.localeCompare(b.card.name));
+    const n = g.reduce((a, e) => a + e.qty, 0);
+    h += `<h3>${t === 'Other' ? 'Other' : t === 'Land' ? 'Lands' : t === 'Sorcery' ? 'Sorceries' : t + 's'} <span>${n}</span></h3>`;
+    g.forEach(e => {
+      const iss = issuesFor(e.card);
+      h += `<div class="row ${iss.length ? 'bad' : ''}" data-name="${esc(e.card.name)}">
+        <span class="q"><button data-act="dec" aria-label="Remove one">&minus;</button><b>${e.qty}</b><button data-act="inc" aria-label="Add one">+</button></span>
+        <span class="nm">${esc(e.card.name)}</span><span>${pips(e.card.cost)}</span><span class="px">${money(e.card.usd * e.qty)}</span>
+        ${iss.length ? `<small class="flag">${esc(iss.join(', '))}</small>` : ''}</div>`;
+    });
+  });
+  if(!entries.length) h += `<div class="msg"><b>Nothing in the list</b>Add cards from search or EDHREC picks, or import a list.</div>`;
+  $('#deckPane').innerHTML = h;
+}
+
+/* ---------- rendering: search ---------- */
+function renderChips(){
+  $('#chips').innerHTML = CHIPS.map(c => `<button class="chip" data-act="chip" data-id="${c.id}" aria-pressed="${state.search.chips.includes(c.id)}">${c.label}</button>`).join('');
+}
+function hasQuery(){ return state.search.q.trim() || state.search.chips.length; }
+function buildQuery(){
+  const s = state.search, d = state.deck, p = [s.q.trim()];
+  s.chips.forEach(id => p.push(CHIPS.find(c => c.id === id).q));
+  if(d.format === 'commander' && d.commander && s.match) p.push(d.commander.ci.length ? 'id<=' + d.commander.ci.join('').toLowerCase() : 'id:c');
+  if(s.legal) p.push('f:' + d.format);
+  return p.filter(Boolean).join(' ');
+}
+let searchGen = 0;
+async function runSearch(append){
+  const s = state.search, gen = ++searchGen;
+  if(!hasQuery()){ s.results = []; s.next = null; s.status = 'idle'; renderResults(); return; }
+  s.status = 'loading'; renderResults();
+  try{
+    const path = append && s.next ? s.next : '/cards/search?q=' + encodeURIComponent(buildQuery()) + '&unique=cards&order=' + s.order;
+    const j = await sf(path);
+    if(gen !== searchGen) return;
+    const cards = j.data.map(c => remember(c));
+    s.results = append ? s.results.concat(cards) : cards;
+    s.next = j.has_more ? j.next_page : null; s.total = j.total_cards; s.status = 'ready';
+  }catch(err){
+    if(gen !== searchGen) return;
+    if(err.status === 404){ if(!append) s.results = []; s.next = null; s.total = s.results.length; s.status = 'ready'; }
+    else { s.status = 'error'; s.error = err.message; }
+  }
+  renderResults();
+}
+function renderResults(){
+  const s = state.search, box = $('#results');
+  if(s.status === 'idle' && !s.results.length){
+    box.innerHTML = `<div class="msg"><b>Search any card</b>Type a name, or use Scryfall syntax such as <code>t:elf o:"draw a card"</code> or <code>mv&lt;=2 c:g</code>. The buttons above add common roles.</div>`; return;
+  }
+  if(s.status === 'loading' && !s.results.length){ box.innerHTML = '<div class="msg">Searching Scryfall&hellip;</div>'; return; }
+  if(s.status === 'error'){ box.innerHTML = `<div class="msg err"><b>Search failed</b>${esc(s.error)}</div>`; return; }
+  if(!s.results.length){ box.innerHTML = `<div class="msg"><b>No cards matched</b>Try fewer filters, or turn off the color and legality options.</div>`; return; }
+  box.innerHTML = `<div style="color:var(--mute)">${s.total} card${s.total === 1 ? '' : 's'} found</div>
+    <div class="grid">${s.results.map(c => tileHTML(c)).join('')}</div>
+    <div class="drow" style="justify-content:center">${s.status === 'loading' ? 'Loading more&hellip;' : s.next ? '<button class="btn" data-act="more">Load more</button>' : ''}</div>`;
+  refreshBadges();
+}
+
+/* ---------- rendering: EDHREC ---------- */
+function renderEdh(){
+  const box = $('#panelEdh'), e = state.edh, d = state.deck;
+  if(!d.commander){ box.innerHTML = `<div class="msg"><b>Choose a commander first</b>EDHREC suggestions are built around your commander. Search for one and press Commander on its card.</div>`; return; }
+  const themeOpts = ['<option value="">All decks</option>', '<option value="budget">Budget</option>', '<option value="expensive">Expensive</option>']
+    .concat(e.themes.map(t => `<option value="${esc(t.slug)}">${esc(t.label)}</option>`)).join('');
+  let h = `<div class="controls" style="margin-bottom:12px"><div style="flex:1;font:700 16px var(--serif)">${esc(d.commander.name)}</div>
+    <select class="field" id="edhTheme" aria-label="Theme" style="flex:none;min-width:0">${themeOpts}</select>
+    <label class="opts" style="margin:0"><span><input type="checkbox" id="edhHide" ${e.hideOwned ? 'checked' : ''}> Hide cards in deck</span></label>
+    <a class="btn small" href="https://edhrec.com/commanders/${esc(slug(d.commander.name))}" target="_blank" rel="noopener">Open on EDHREC</a></div>`;
+  if(e.status === 'loading' || e.status === 'idle' || e.status === 'none'){ h += '<div class="msg">Loading EDHREC data&hellip;</div>'; }
+  else if(e.status === 'error'){
+    h += e.error === 'blocked'
+      ? `<div class="msg err"><b>The browser blocked the EDHREC request</b>EDHREC may not allow cross-origin requests from this page. You can route it through a CORS proxy of your choice under Connection, or try the one below.<div class="drow" style="justify-content:center"><button class="btn primary" data-act="useproxy">Retry with corsproxy.io</button><button class="btn" data-act="settings">Connection settings</button></div></div>`
+      : `<div class="msg err"><b>No EDHREC data</b>${esc(e.error)}</div>`;
+  } else if(e.status === 'empty'){ h += '<div class="msg"><b>No suggestions</b>EDHREC returned no card lists for this filter.</div>'; }
+  else {
+    e.lists.forEach((l, i) => {
+      const open = e.open.includes(i);
+      let cards = l.cards;
+      h += `<div class="sec"><button class="sh" data-act="sec" data-i="${i}" aria-expanded="${open}"><span>${esc(l.header)}<small>${cards.length} cards</small></span><span>${open ? '&minus;' : '+'}</span></button>`;
+      if(open){
+        const names = cards.map(c => c.name);
+        const todo = names.filter(n => !getCard(n) && !missing.has(n.toLowerCase()));
+        if(todo.length){
+          h += '<div class="body"><div class="msg">Fetching card images&hellip;</div></div>';
+          const key = l.tag + ':' + i + ':' + todo.length;
+          if(!resolving.has(key)){ resolving.add(key); resolveNames(names).catch(() => {}).then(() => { resolving.delete(key); renderEdh(); }); }
+        } else {
+          let shown = cards.map(c => ({c, card:getCard(c.name)})).filter(x => x.card);
+          if(e.hideOwned) shown = shown.filter(x => qtyOf(x.card) === 0);
+          h += `<div class="body"><div class="drow" style="margin:0 0 4px"><button class="btn small" data-act="top10" data-i="${i}">Add top 10 not in deck</button></div><div class="grid">${shown.map(x => {
+            const pct = x.c.pot ? Math.round(x.c.inc / x.c.pot * 100) : Math.round(x.c.inc || 0);
+            const extra = `<div class="edh"><div class="bar"><i style="width:${Math.min(100, pct)}%"></i></div><b>${pct}%</b> of decks${x.c.syn > 0.04 ? `<span class="syn">+${Math.round(x.c.syn * 100)}% synergy</span>` : ''}</div>`;
+            return tileHTML(x.card, extra);
+          }).join('')}</div></div>`;
+        }
+      }
+      h += '</div>';
+    });
+  }
+  box.innerHTML = h;
+  const sel = $('#edhTheme'); if(sel) sel.value = e.theme;
+  refreshBadges();
+}
+function addTop(i){
+  const l = state.edh.lists[i]; let n = 0;
+  for(const c of l.cards){
+    if(n >= 10) break;
+    const card = getCard(c.name);
+    if(!card || isBasic(card) || qtyOf(card) > 0) continue;
+    if(addCard(card, 1, true)) n++;
+  }
+  commit(); toast(n ? 'Added ' + n + ' cards' : 'Nothing new to add');
+}
+
+/* ---------- import / export ---------- */
+function parseList(text){
+  let mode = 'main', cmdr = null; const items = [];
+  for(const raw of text.split(/\r?\n/)){
+    const line = raw.trim();
+    if(!line || line.startsWith('//') || line.startsWith('#')) continue;
+    const h = line.toLowerCase().replace(/:$/, '');
+    if(h === 'commander' || h === 'commanders'){ mode = 'cmdr'; continue; }
+    if(['deck','mainboard','main'].includes(h)){ mode = 'main'; continue; }
+    if(['sideboard','maybeboard','companion','considering'].includes(h)){ mode = 'skip'; continue; }
+    if(/^sb:/i.test(line) || mode === 'skip') continue;
+    const m = line.match(/^(\d+)\s*x?\s+(.+)$/i);
+    const qty = m ? +m[1] : 1;
+    let name = (m ? m[2] : line).replace(/\s+\([A-Za-z0-9]{2,6}\)(\s+\S+)?(\s+\*[A-Za-z]\*)?$/, '').replace(/\s+\*[A-Za-z]\*$/, '').trim();
+    if(mode === 'cmdr' && !cmdr){ cmdr = name; continue; }
+    items.push({qty, name});
+  }
+  return {cmdr, items};
+}
+async function doImport(text, replace){
+  const st = $('#impStatus'); st.textContent = 'Looking up cards on Scryfall\u2026';
+  try{
+    const p = parseList(text);
+    await resolveNames(p.items.map(i => i.name).concat(p.cmdr ? [p.cmdr] : []));
+    const d = state.deck, nf = [];
+    if(replace){ d.cards = {}; d.commander = null; }
+    if(p.cmdr){
+      const c = getCard(p.cmdr);
+      if(!c) nf.push(p.cmdr); else if(d.format === 'commander') d.commander = c; else addCard(c, 1, true);
+    }
+    p.items.forEach(i => { const c = getCard(i.name); if(!c) nf.push(i.name); else if(!(d.commander && d.commander.name === c.name)) addCard(c, i.qty, true); });
+    $('#dlg').close(); commit();
+    if(d.commander){ state.edh.theme = ''; loadEdh(true); runSearch(); }
+    toast(nf.length ? 'Imported. Not found: ' + nf.slice(0, 4).join(', ') + (nf.length > 4 ? '\u2026' : '') : 'Imported ' + (count()) + ' cards');
+  }catch(err){ st.textContent = 'Import failed: ' + err.message; }
+}
+function exportText(){
+  const d = state.deck, lines = [];
+  if(d.commander){ lines.push('Commander', '1 ' + d.commander.name, '', 'Deck'); }
+  TYPE_ORDER.forEach(t => {
+    Object.values(d.cards).filter(e => primaryType(e.card.type) === t)
+      .sort((a, b) => a.card.name.localeCompare(b.card.name)).forEach(e => lines.push(e.qty + ' ' + e.card.name));
+  });
+  return lines.join('\n');
+}
+
+/* ---------- dialogs ---------- */
+function modal(title, html){ $('#dtitle').textContent = title; $('#dbody').innerHTML = html; const d = $('#dlg'); if(!d.open) d.showModal(); }
+let handN = 7;
+function sampleHand(n){
+  const pool = [];
+  Object.values(state.deck.cards).forEach(e => { for(let i = 0; i < e.qty; i++) pool.push(e.card); });
+  if(pool.length < n){ toast('Add at least ' + n + ' cards first.'); return; }
+  for(let i = pool.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  handN = n;
+  const hand = pool.slice(0, n), lands = hand.filter(c => primaryType(c.type) === 'Land').length;
+  modal('Sample hand', `<div class="hand">${hand.map(c => `<img src="${esc(c.img || c.sm)}" alt="${esc(c.name)}">`).join('')}</div>
+    <div class="drow"><span>${lands} land${lands === 1 ? '' : 's'}, ${n - lands} spell${n - lands === 1 ? '' : 's'}</span><span class="spacer"></span>
+    <button class="btn" data-act="newhand">New ${7} cards</button><button class="btn" data-act="mull" ${n <= 1 ? 'disabled' : ''}>Mulligan to ${Math.max(1, n - 1)}</button></div>`);
+}
+
+/* ---------- peek + toast ---------- */
+const peek = $('#peek'), peekImg = $('#peek img');
+const canHover = matchMedia('(hover:hover)').matches;
+document.addEventListener('mouseover', e => {
+  if(!canHover) return;
+  const t = e.target.closest('.row[data-name], .cmdr[data-name]');
+  if(!t){ peek.style.display = 'none'; return; }
+  const c = getCard(t.dataset.name);
+  if(c && c.img){ peekImg.src = c.img; peek.style.display = 'block'; movePeek(e); }
+});
+document.addEventListener('mousemove', e => { if(peek.style.display === 'block') movePeek(e); });
+document.addEventListener('scroll', () => { peek.style.display = 'none'; }, true);
+function movePeek(e){
+  const w = 264, h = 368; let x = e.clientX + 22, y = e.clientY - h / 3;
+  if(x + w > innerWidth - 8) x = e.clientX - w - 22;
+  y = Math.max(8, Math.min(innerHeight - h - 8, y));
+  peek.style.left = x + 'px'; peek.style.top = y + 'px';
+}
+let toastT;
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); }
+
+/* ---------- events ---------- */
+function renderAll(){ renderTop(); renderDeck(); refreshBadges(); if(state.tab === 'edh' && state.edh.status === 'ready') renderEdh(); }
+function setTab(t){
+  state.tab = t;
+  $('#panelSearch').hidden = t !== 'search'; $('#panelEdh').hidden = t !== 'edh';
+  $('#tabSearch').setAttribute('aria-selected', t === 'search'); $('#tabEdh').setAttribute('aria-selected', t === 'edh');
+  if(t === 'edh'){ renderEdh(); if(state.deck.commander && (state.edh.status === 'idle' || state.edh.status === 'none')) loadEdh(true); }
+}
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]'); if(!a) return;
+  const act = a.dataset.act, d = state.deck;
+  const row = a.closest('[data-name]'); const card = row ? getCard(row.dataset.name) : null;
+  switch(act){
+    case 'add': if(card) addCard(card); break;
+    case 'cmdr': if(card){ setCommander(card); } break;
+    case 'rmcmdr': d.commander = null; state.edh.status = 'none'; commit(); renderEdh(); runSearch(); break;
+    case 'inc': if(card) addCard(card); break;
+    case 'dec': { const en = d.cards[row.dataset.name]; if(en){ en.qty--; if(en.qty <= 0) delete d.cards[row.dataset.name]; commit(); } break; }
+    case 'chip': { const id = a.dataset.id, s = state.search; s.chips = s.chips.includes(id) ? s.chips.filter(x => x !== id) : s.chips.concat(id); renderChips(); runSearch(); break; }
+    case 'more': runSearch(true); break;
+    case 'tab': setTab(a.dataset.tab); break;
+    case 'sec': { const i = +a.dataset.i, o = state.edh.open; state.edh.open = o.includes(i) ? o.filter(x => x !== i) : o.concat(i); renderEdh(); break; }
+    case 'top10': addTop(+a.dataset.i); break;
+    case 'useproxy': state.settings.proxy = 'https://corsproxy.io/?url='; save(); loadEdh(true); break;
+    case 'import': modal('Import a deck list', `<p style="margin-top:0;color:var(--mute)">Paste a list from Moxfield, Archidekt, MTG Arena or plain text. Lines like <code>1 Sol Ring</code>; a Commander heading marks your commander.</p>
+        <textarea id="impText" placeholder="Commander\n1 Atraxa, Praetors' Voice\n\nDeck\n1 Sol Ring\n1 Arcane Signet"></textarea>
+        <div class="drow"><label><input type="checkbox" id="impReplace" checked> Replace the current deck</label><span class="spacer"></span><span id="impStatus" style="color:var(--mute)"></span><button class="btn primary" data-act="doimport">Import</button></div>`); break;
+    case 'doimport': doImport($('#impText').value, $('#impReplace').checked); break;
+    case 'export': modal('Export deck list', `<textarea id="expText" readonly>${esc(exportText())}</textarea>
+        <div class="drow"><button class="btn primary" data-act="copy">Copy to clipboard</button><button class="btn" data-act="download">Download .txt</button></div>`); break;
+    case 'copy': navigator.clipboard.writeText($('#expText').value).then(() => toast('Copied'), () => { $('#expText').select(); toast('Press Ctrl+C to copy'); }); break;
+    case 'download': { const b = new Blob([exportText()], {type:'text/plain'}), u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = (d.name || 'deck').replace(/[^\w\- ]+/g, '') + '.txt'; l.click(); URL.revokeObjectURL(u); break; }
+    case 'hand': sampleHand(7); break;
+    case 'newhand': sampleHand(7); break;
+    case 'mull': sampleHand(Math.max(1, handN - 1)); break;
+    case 'clear': if(confirm('Start a new deck? The current list will be cleared.')){ d.cards = {}; d.commander = null; d.name = 'Untitled deck'; $('#deckName').value = d.name; state.edh.status = 'none'; commit(); renderEdh(); runSearch(); } break;
+    case 'settings': modal('Connection', `<p style="margin-top:0;color:var(--mute)">Card data comes from Scryfall. EDHREC data comes from json.edhrec.com. If your browser blocks that request, enter a CORS proxy prefix; the EDHREC address is appended to it, URL-encoded.</p>
+        <input class="field" id="proxyIn" style="width:100%" placeholder="https://corsproxy.io/?url=" value="${esc(state.settings.proxy)}">
+        <div class="drow"><button class="btn primary" data-act="saveproxy">Save and reload EDHREC</button></div>`); break;
+    case 'saveproxy': state.settings.proxy = $('#proxyIn').value.trim(); save(); $('#dlg').close(); loadEdh(true); break;
+    case 'close': $('#dlg').close(); break;
+  }
+});
+let qT;
+$('#q').addEventListener('input', e => { state.search.q = e.target.value; clearTimeout(qT); qT = setTimeout(() => runSearch(), 350); });
+$('#order').addEventListener('change', e => { state.search.order = e.target.value; runSearch(); });
+$('#optId').addEventListener('change', e => { state.search.match = e.target.checked; runSearch(); });
+$('#optLegal').addEventListener('change', e => { state.search.legal = e.target.checked; runSearch(); });
+$('#deckName').addEventListener('input', e => { state.deck.name = e.target.value; save(); });
+$('#format').addEventListener('change', e => {
+  const d = state.deck, prev = d.format; d.format = e.target.value;
+  if(prev === 'commander' && d.format !== 'commander' && d.commander){ addCard(d.commander, 1, true); d.commander = null; }
+  state.edh.status = 'none'; commit(); runSearch();
+  if(state.tab === 'edh') renderEdh();
+});
+document.addEventListener('change', e => {
+  if(e.target.id === 'edhTheme'){ state.edh.theme = e.target.value; loadEdh(true); }
+  if(e.target.id === 'edhHide'){ state.edh.hideOwned = e.target.checked; renderEdh(); }
+});
+
+/* ---------- init ---------- */
+load();
+$('#format').innerHTML = Object.entries(FORMATS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('');
+$('#format').value = state.deck.format;
+$('#deckName').value = state.deck.name;
+renderChips(); renderAll(); renderResults(); renderEdh();
+if(state.deck.commander) loadEdh(true);
+})();
+</script>
+</body>
+</html>

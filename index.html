@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pages</title>
+<meta name="description" content="Every page hosted on this site.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #17162a;
+    --surface: #211f3a;
+    --surface-hi: #2a2848;
+    --line: #38355f;
+    --text: #f1edff;
+    --muted: #a8a4cc;
+    --focus: #ffd166;
+    --card-s: 72%;
+    --card-l: 64%;
+    --font: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  :root:not([data-theme="dark"]) { }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --bg: #f6f4fb;
+      --surface: #ffffff;
+      --surface-hi: #efebfa;
+      --line: #d9d3ee;
+      --text: #1d1a33;
+      --muted: #645f86;
+      --focus: #9a5b00;
+      --card-s: 62%;
+      --card-l: 46%;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f6f4fb;
+    --surface: #ffffff;
+    --surface-hi: #efebfa;
+    --line: #d9d3ee;
+    --text: #1d1a33;
+    --muted: #645f86;
+    --focus: #9a5b00;
+    --card-s: 62%;
+    --card-l: 46%;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  }
+  body.locked { overflow: hidden; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px 72px; }
+
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 22px 0 0; color: var(--muted); font-size: 0.95rem;
+  }
+  .top a { text-decoration: none; padding: 6px 2px; }
+  .top a:hover { color: var(--text); text-decoration: underline; }
+  .top button {
+    font: inherit; color: inherit; background: none; border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  }
+  .top button:hover { color: var(--text); border-color: var(--muted); }
+  .top .actions { display: flex; gap: 14px; align-items: center; }
+
+  .hero { padding: clamp(40px, 9vw, 96px) 0 28px; animation: rise 520ms cubic-bezier(.2,.7,.2,1) both; }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.3rem, 7.5vw, 5.2rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+  .sub { margin: 16px 0 0; color: var(--muted); font-size: 1.1rem; max-width: 52ch; }
+
+  .search {
+    margin-top: 32px; position: relative; display: flex; align-items: center;
+    background: var(--surface); border: 2px solid var(--line); border-radius: 18px;
+    transition: border-color .15s;
+  }
+  .search:focus-within { border-color: var(--focus); }
+  .search svg { flex: none; margin-left: 18px; color: var(--muted); }
+  .search input {
+    flex: 1; min-width: 0; font: inherit; font-size: 1.25rem; font-weight: 600;
+    color: var(--text); background: transparent; border: 0; outline: 0; padding: 18px 16px;
+  }
+  .search input::placeholder { color: var(--muted); font-weight: 400; }
+  .search kbd {
+    margin-right: 16px; font: inherit; font-size: .85rem; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 6px; padding: 1px 9px;
+  }
+  .search input:focus ~ kbd, .search input:not(:placeholder-shown) ~ kbd { display: none; }
+
+  .meta { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin: 22px 0 26px; }
+  .count { color: var(--muted); font-size: .95rem; margin-right: auto; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: inherit; font-size: .92rem; font-weight: 600; color: var(--text);
+    background: transparent; border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 14px; cursor: pointer;
+  }
+  .chip:hover { background: var(--surface); }
+  .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 16px; }
+
+  .card {
+    --accent: hsl(var(--h, 260) var(--card-s) var(--card-l));
+    position: relative; display: flex; flex-direction: column; gap: 8px;
+    min-height: 150px; padding: 18px 18px 14px 28px; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 10px; background: var(--accent);
+  }
+  .card::after {
+    content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px;
+    background: rgba(0,0,0,.18);
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--accent); background: var(--surface-hi); }
+  .card h2 { margin: 0; font-size: 1.28rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; }
+  .card h2 a { text-decoration: none; }
+  .card h2 a::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+  .card h2 a:focus-visible { outline: none; }
+  .card:has(h2 a:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .card p {
+    margin: 0; color: var(--muted); font-size: .95rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card .foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 6px; }
+  .card .path { color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .card .peek {
+    position: relative; z-index: 2; flex: none; font: inherit; font-size: .85rem; font-weight: 600;
+    color: var(--text); background: transparent; border: 1px solid var(--line);
+    border-radius: 8px; padding: 3px 11px; cursor: pointer;
+  }
+  .card .peek:hover { border-color: var(--accent); background: var(--bg); }
+
+  .skeleton { min-height: 150px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); animation: pulse 1.3s ease-in-out infinite; }
+  .skeleton:nth-child(2) { animation-delay: .15s; } .skeleton:nth-child(3) { animation-delay: .3s; }
+
+  .note {
+    margin: 0 0 22px; padding: 14px 18px; border: 1px dashed var(--line); border-radius: 12px;
+    color: var(--muted); font-size: .95rem;
+  }
+  .note strong { color: var(--text); }
+  .note code { background: var(--surface); border-radius: 5px; padding: 1px 6px; font-size: .88em; }
+  .empty { text-align: center; padding: 56px 12px; color: var(--muted); }
+  .empty h3 { margin: 0 0 6px; color: var(--text); font-size: 1.3rem; }
+  .empty button { font: inherit; margin-top: 14px; color: var(--text); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; cursor: pointer; }
+
+  /* Preview viewer */
+  .viewer { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; background: var(--bg); padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+  .viewer[hidden] { display: none; }
+  .viewer header { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  .viewer header button, .viewer header a {
+    font: inherit; font-size: .95rem; font-weight: 600; color: var(--text); text-decoration: none;
+    background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; cursor: pointer; white-space: nowrap;
+  }
+  .viewer header button:hover, .viewer header a:hover { background: var(--surface); }
+  .viewer .vt { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .viewer iframe { flex: 1; width: 100%; border: 0; background: #fff; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes pulse { 50% { opacity: .5; } }
+  @media (prefers-reduced-motion: reduce) {
+    .hero, .skeleton { animation: none; }
+    .card, .search { transition: none; }
+    .card:hover { transform: none; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px 56px; }
+    .search input { font-size: 1.05rem; }
+    .viewer .vt { display: none; }
+    .viewer header { justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span id="repoLabel"></span>
+    <div class="actions">
+      <a id="repoLink" href="#" hidden target="_blank" rel="noopener">View on GitHub</a>
+      <button id="themeBtn" type="button" aria-label="Switch between light and dark theme">Theme</button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <h1 id="siteTitle">Pages</h1>
+    <p class="sub" id="siteSub">Every page on this site in one place. Search, preview, or just open one.</p>
+    <label class="search">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search pages" autocomplete="off" spellcheck="false" aria-label="Search pages">
+      <kbd aria-hidden="true">/</kbd>
+    </label>
+  </section>
+
+  <div class="meta">
+    <span class="count" id="count" aria-live="polite">Looking for pages…</span>
+    <div class="chips" id="chips" role="group" aria-label="Filter by folder"></div>
+  </div>
+
+  <div id="note"></div>
+  <main class="grid" id="grid" aria-busy="true">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </main>
+</div>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Page preview">
+  <header>
+    <button id="vClose" type="button">Back to pages</button>
+    <span class="vt" id="vTitle"></span>
+    <a id="vOpen" href="#" target="_blank" rel="noopener">Open in new tab</a>
+  </header>
+  <iframe id="vFrame" title="Page preview"></iframe>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   SETTINGS — edit these, everything else works on its own.
+   ------------------------------------------------------------------ */
+const CONFIG = {
+  // Shown as the big heading. Leave null to use the site's address.
+  title: null,
+
+  // Finds every .html file in your repo through the GitHub API.
+  // Works automatically on username.github.io and username.github.io/repo.
+  autoDiscover: true,
+
+  // Only needed on a custom domain, or if detection guesses wrong. Example: "yourname/your-repo"
+  repo: null,
+  // Branch to read. Leave null to use the repo's default branch.
+  branch: null,
+  // If Pages publishes from a subfolder (like /docs), put it here. Example: "docs"
+  root: "",
+
+  // Reads each page's <title> and description so cards fill in by themselves.
+  readPageDetails: true,
+
+  // Extra files or folders to hide. Example: ["drafts", "old/test.html"]
+  hide: [],
+};
+
+/* Add or override pages by hand. All fields except path are optional.
+   Use "href" for a link to another site. Set hidden: true to remove a page.
+
+   { path: "games/index.html", title: "Games", description: "Everything I've shipped.", group: "Play" },
+   { href: "https://example.com", title: "My other site", group: "Elsewhere" },
+*/
+const PAGES = [
+];
+
+/* ------------------------------------------------------------------ */
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const state = { pages: [], q: "", group: "All", auto: false };
+
+  /* ---------- storage helpers (private browsing can block these) ---------- */
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  /* ---------- theme ---------- */
+  const root = document.documentElement;
+  const savedTheme = store.get("pages-theme");
+  if (savedTheme) root.dataset.theme = savedTheme;
+  $("#themeBtn").addEventListener("click", () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : !matchMedia("(prefers-color-scheme: light)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    store.set("pages-theme", root.dataset.theme);
+  });
+
+  /* ---------- naming ---------- */
+  const host = location.hostname || "this site";
+  const siteName = CONFIG.title || host;
+  $("#siteTitle").textContent = siteName;
+  document.title = siteName;
+
+  const hueOf = (s) => { let h = 7; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % 360; };
+  const prettify = (s) => s.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase());
+  const keyOf = (p) => p.replace(/^\.?\//, "").replace(/(^|\/)index\.html?$/i, "$1");
+  const isExternal = (href) => { try { return new URL(href, location.href).origin !== location.origin; } catch { return true; } };
+
+  function fromPath(p) {
+    const parts = p.split("/");
+    const file = parts.pop();
+    const isIndex = /^index\.html?$/i.test(file);
+    const href = isIndex
+      ? (parts.length ? parts.map(encodeURIComponent).join("/") + "/" : "./")
+      : [...parts, file].map(encodeURIComponent).join("/");
+    const name = isIndex ? (parts[parts.length - 1] || "Home") : file.replace(/\.html?$/i, "");
+    return { path: p, href, title: prettify(name), description: "", group: parts[0] ? prettify(parts[0]) : "Top level" };
+  }
+
+  /* ---------- finding pages ---------- */
+  function detectRepo() {
+    if (CONFIG.repo) return CONFIG.repo;
+    if (!host.endsWith(".github.io")) return null;
+    const user = host.split(".")[0];
+    const seg = location.pathname.split("/").filter(Boolean)[0];
+    return seg && !/\.html?$/i.test(seg) ? `${user}/${seg}` : `${user}/${host}`;
+  }
+
+  const hiddenByDefault = (p) => p.split("/").some((s) => /^[._]/.test(s) || s === "node_modules");
+  const hiddenByConfig = (p) => CONFIG.hide.some((h) => p === h || p.startsWith(h.replace(/\/?$/, "/")));
+
+  async function getJSON(url) {
+    const r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+    if (!r.ok) { const e = new Error("GitHub " + r.status); e.status = r.status; throw e; }
+    return r.json();
+  }
+
+  async function discover(repo) {
+    const cacheKey = "pages-tree-v1:" + repo;
+    const cached = store.get(cacheKey);
+    if (cached && Date.now() - cached.at < 10 * 60 * 1000) return cached.files;
+
+    let tree = null, lastErr = null;
+    const branches = CONFIG.branch ? [CONFIG.branch] : ["HEAD", "main", "master"];
+    for (const b of branches) {
+      try { tree = await getJSON(`https://api.github.com/repos/${repo}/git/trees/${encodeURIComponent(b)}?recursive=1`); break; }
+      catch (e) { lastErr = e; if (e.status === 403) break; }
+    }
+    if (!tree) {
+      if (cached) return cached.files;
+      throw lastErr || new Error("No tree");
+    }
+    const prefix = CONFIG.root ? CONFIG.root.replace(/^\/|\/$/g, "") + "/" : "";
+    const files = tree.tree
+      .filter((e) => e.type === "blob" && /\.html?$/i.test(e.path) && e.path.startsWith(prefix))
+      .map((e) => e.path.slice(prefix.length))
+      .filter((p) => !/^(index|404)\.html?$/i.test(p) && !hiddenByDefault(p) && !hiddenByConfig(p));
+    store.set(cacheKey, { at: Date.now(), files });
+    return files;
+  }
+
+  function mergeManual(autoPages) {
+    const map = new Map(autoPages.map((p) => [keyOf(p.path), p]));
+    for (const m of PAGES) {
+      const href = m.href || m.path;
+      if (!href) continue;
+      const path = m.path || m.href;
+      const k = keyOf(path);
+      if (m.hidden) { map.delete(k); continue; }
+      const base = map.get(k) || (m.href && isExternal(m.href)
+        ? { path, href: m.href, title: m.title || m.href, description: "", group: "Elsewhere" }
+        : fromPath(path));
+      const merged = { ...base };
+      if (m.href) merged.href = m.href;
+      if (m.title) { merged.title = m.title; merged.fixedTitle = true; }
+      if (m.description) { merged.description = m.description; merged.fixedDesc = true; }
+      if (m.group) merged.group = m.group;
+      map.set(k, merged);
+    }
+    return [...map.values()].map((p) => ({ ...p, hue: hueOf(p.path) }));
+  }
+
+  /* ---------- reading <title> and description from each page ---------- */
+  async function readDetails() {
+    const cache = store.get("pages-meta-v1") || {};
+    const fresh = (c) => c && Date.now() - c.at < 60 * 60 * 1000;
+    const todo = [];
+    for (const p of state.pages) {
+      if (isExternal(p.href) || (p.fixedTitle && p.fixedDesc)) continue;
+      const c = cache[p.href];
+      if (fresh(c)) apply(p, c); else todo.push(p);
+    }
+    schedule();
+
+    let i = 0;
+    const worker = async () => {
+      while (i < todo.length) {
+        const p = todo[i++];
+        const ctl = new AbortController();
+        const t = setTimeout(() => ctl.abort(), 6000);
+        try {
+          const r = await fetch(p.href, { signal: ctl.signal, credentials: "omit" });
+          if (!r.ok) continue;
+          const doc = new DOMParser().parseFromString(await r.text(), "text/html");
+          const title = (doc.title || "").trim();
+          const desc = (doc.querySelector('meta[name="description"]')?.content || "").trim();
+          cache[p.href] = { at: Date.now(), title, desc };
+          apply(p, cache[p.href]);
+          schedule();
+        } catch {} finally { clearTimeout(t); }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    store.set("pages-meta-v1", cache);
+  }
+  function apply(p, c) {
+    if (!p.fixedTitle && c.title) p.title = c.title;
+    if (!p.fixedDesc && c.desc) p.description = c.desc;
+  }
+
+  /* ---------- rendering ---------- */
+  let queued = false;
+  function schedule() { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; render(); }); }
+
+  function visible() {
+    const q = state.q.trim().toLowerCase();
+    return state.pages
+      .filter((p) => (state.group === "All" || p.group === state.group) &&
+        (!q || [p.title, p.path, p.description, p.group].join(" ").toLowerCase().includes(q)))
+      .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" }));
+  }
+
+  function renderChips() {
+    const groups = [...new Set(state.pages.map((p) => p.group))].sort((a, b) => a.localeCompare(b));
+    const el = $("#chips");
+    if (groups.length < 2) { el.innerHTML = ""; return; }
+    el.innerHTML = ["All", ...groups]
+      .map((g) => `<button class="chip" type="button" data-g="${esc(g)}" aria-pressed="${g === state.group}">${esc(g)}</button>`)
+      .join("");
+  }
+
+  function render() {
+    const list = visible();
+    const total = state.pages.length;
+    $("#grid").setAttribute("aria-busy", "false");
+    $("#count").textContent = !total ? "No pages yet"
+      : list.length === total ? `${total} ${total === 1 ? "page" : "pages"}`
+      : `${list.length} of ${total} pages`;
+
+    if (!list.length) {
+      $("#grid").innerHTML = total
+        ? `<div class="empty" style="grid-column:1/-1"><h3>Nothing matches “${esc(state.q)}”</h3>Try a shorter search or another folder.<br><button type="button" id="clear">Clear search</button></div>`
+        : `<div class="empty" style="grid-column:1/-1"><h3>No pages to show</h3>Add pages to the <code>PAGES</code> list at the top of this file’s script, or host this on GitHub Pages so they can be found automatically.</div>`;
+      return;
+    }
+
+    $("#grid").innerHTML = list.map((p, i) => `
+      <article class="card" style="--h:${p.hue}">
+        <h2><a href="${esc(p.href)}">${esc(p.title)}</a></h2>
+        ${p.description ? `<p>${esc(p.description)}</p>` : ""}
+        <div class="foot">
+          <span class="path" title="${esc(p.path)}">${esc(p.path)}</span>
+          ${isExternal(p.href) ? "" : `<button class="peek" type="button" data-i="${i}" aria-label="Preview ${esc(p.title)}">Preview</button>`}
+        </div>
+      </article>`).join("");
+    $("#grid")._list = list;
+  }
+
+  /* ---------- events ---------- */
+  $("#q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+  $("#q").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { const first = visible()[0]; if (first) location.href = first.href; }
+    if (e.key === "Escape") { e.target.value = ""; state.q = ""; render(); }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && viewer.hidden) { e.preventDefault(); $("#q").focus(); }
+    if (e.key === "Escape" && !viewer.hidden) closeViewer();
+  });
+  $("#chips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-g]"); if (!b) return;
+    state.group = b.dataset.g; renderChips(); render();
+  });
+  $("#grid").addEventListener("click", (e) => {
+    if (e.target.id === "clear") { state.q = ""; $("#q").value = ""; render(); $("#q").focus(); return; }
+    const b = e.target.closest(".peek"); if (!b) return;
+    const p = $("#grid")._list[+b.dataset.i]; if (p) openViewer(p, b);
+  });
+
+  /* ---------- preview ---------- */
+  const viewer = $("#viewer");
+  let lastFocus = null;
+  function openViewer(p, trigger) {
+    lastFocus = trigger;
+    $("#vTitle").textContent = p.title;
+    $("#vOpen").href = p.href;
+    $("#vFrame").src = p.href;
+    viewer.hidden = false;
+    document.body.classList.add("locked");
+    $("#vClose").focus();
+  }
+  function closeViewer() {
+    viewer.hidden = true;
+    $("#vFrame").src = "about:blank";
+    document.body.classList.remove("locked");
+    if (lastFocus) lastFocus.focus();
+  }
+  $("#vClose").addEventListener("click", closeViewer);
+
+  /* ---------- start ---------- */
+  function showNote(html) { $("#note").innerHTML = html ? `<p class="note">${html}</p>` : ""; }
+
+  async function init() {
+    let auto = [];
+    const repo = CONFIG.autoDiscover ? detectRepo() : null;
+
+    if (repo) {
+      $("#repoLabel").textContent = repo;
+      $("#repoLink").href = `https://github.com/${repo}`;
+      $("#repoLink").hidden = false;
+      try {
+        auto = (await discover(repo)).map(fromPath);
+        state.auto = true;
+      } catch (e) {
+        showNote(e.status === 403
+          ? "<strong>GitHub’s request limit was hit,</strong> so only hand-added pages are showing. Try again in a little while."
+          : `<strong>Couldn’t read the file list for <code>${esc(repo)}</code>.</strong> If the repo is private or the name is different, set <code>CONFIG.repo</code> at the top of the script.`);
+      }
+    } else if (CONFIG.autoDiscover && !PAGES.length) {
+      showNote("Automatic page discovery works on <code>github.io</code> addresses. Set <code>CONFIG.repo</code> or fill in <code>PAGES</code> at the top of the script to list pages here.");
+    }
+
+    state.pages = mergeManual(auto);
+    renderChips();
+    render();
+    if (CONFIG.readPageDetails) readDetails();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
