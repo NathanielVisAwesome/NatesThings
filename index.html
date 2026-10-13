@@ -202,6 +202,7 @@
     <span id="repoLabel"></span>
     <div class="actions">
       <a id="repoLink" href="#" hidden target="_blank" rel="noopener">View on GitHub</a>
+      <button id="refreshBtn" type="button" aria-label="Check the repo for new pages">Refresh</button>
       <button id="themeBtn" type="button" aria-label="Switch between light and dark theme">Theme</button>
     </div>
   </div>
@@ -328,15 +329,16 @@ const PAGES = [
   const hiddenByConfig = (p) => CONFIG.hide.some((h) => p === h || p.startsWith(h.replace(/\/?$/, "/")));
 
   async function getJSON(url) {
-    const r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+    // "no-cache" makes the browser re-check with GitHub every time. Unchanged
+    // answers come back as a 304, which doesn't count against the rate limit.
+    const r = await fetch(url, { headers: { Accept: "application/vnd.github+json" }, cache: "no-cache" });
     if (!r.ok) { const e = new Error("GitHub " + r.status); e.status = r.status; throw e; }
     return r.json();
   }
 
   async function discover(repo) {
     const cacheKey = "pages-tree-v1:" + repo;
-    const cached = store.get(cacheKey);
-    if (cached && Date.now() - cached.at < 10 * 60 * 1000) return cached.files;
+    const cached = store.get(cacheKey);   // only used if GitHub can't be reached
 
     let tree = null, lastErr = null;
     const branches = CONFIG.branch ? [CONFIG.branch] : ["HEAD", "main", "master"];
@@ -379,9 +381,9 @@ const PAGES = [
   }
 
   /* ---------- reading <title> and description from each page ---------- */
-  async function readDetails() {
+  async function readDetails(force) {
     const cache = store.get("pages-meta-v1") || {};
-    const fresh = (c) => c && Date.now() - c.at < 60 * 60 * 1000;
+    const fresh = (c) => !force && c && Date.now() - c.at < 10 * 60 * 1000;
     const todo = [];
     for (const p of state.pages) {
       if (isExternal(p.href) || (p.fixedTitle && p.fixedDesc)) continue;
@@ -397,7 +399,7 @@ const PAGES = [
         const ctl = new AbortController();
         const t = setTimeout(() => ctl.abort(), 6000);
         try {
-          const r = await fetch(p.href, { signal: ctl.signal, credentials: "omit" });
+          const r = await fetch(p.href, { signal: ctl.signal, credentials: "omit", cache: force ? "reload" : "default" });
           if (!r.ok) continue;
           const doc = new DOMParser().parseFromString(await r.text(), "text/html");
           const title = (doc.title || "").trim();
@@ -507,9 +509,15 @@ const PAGES = [
   /* ---------- start ---------- */
   function showNote(html) { $("#note").innerHTML = html ? `<p class="note">${html}</p>` : ""; }
 
-  async function init() {
+  let loading = false, lastLoad = 0;
+  async function load(force) {
+    if (loading) return;
+    loading = true;
+    const btn = $("#refreshBtn");
+    btn.disabled = true; btn.textContent = "Checking…";
     let auto = [];
     const repo = CONFIG.autoDiscover ? detectRepo() : null;
+    showNote("");
 
     if (repo) {
       $("#repoLabel").textContent = repo;
@@ -528,11 +536,21 @@ const PAGES = [
     }
 
     state.pages = mergeManual(auto);
+    if (state.group !== "All" && !state.pages.some((p) => p.group === state.group)) state.group = "All";
     renderChips();
     render();
-    if (CONFIG.readPageDetails) readDetails();
+    lastLoad = Date.now();
+    loading = false;
+    btn.disabled = false; btn.textContent = "Refresh";
+    if (CONFIG.readPageDetails) readDetails(force);
   }
-  init();
+
+  $("#refreshBtn").addEventListener("click", () => load(true));
+  // Check again whenever you come back to the tab (at most every 20 seconds).
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && Date.now() - lastLoad > 20000) load(false);
+  });
+  load(false);
 })();
 </script>
 </body>
