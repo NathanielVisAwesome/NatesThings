@@ -1,11 +1,8 @@
 import funkin.play.character.AnimateAtlasCharacter;
 import funkin.play.PlayState;
-import flixel.FlxG;
 import flixel.util.FlxSort;
 import funkin.Conductor;
-import funkin.play.PlayState;
 import funkin.graphics.FunkinSprite;
-import funkin.modding.base.ScriptedFunkinSprite;
 import funkin.audio.visualize.ABotVis;
 import funkin.graphics.shaders.AdjustColorShader;
 
@@ -67,14 +64,15 @@ class OtisSpeakerCharacter extends AnimateAtlasCharacter
     pupil.y = this.y;
     pupil.zIndex = this.zIndex - 5;
 
-    pupil.anim.onFrameChange.add(function(name:String, frameNumber:Int, frameIndex:Int) {
+    pupil.anim.onFrameChange.add(function(name:String, frameNumber:Int, frameIndex:Int)
+    {
       if (frameNumber == 16)
       {
         pupil.anim.pause();
       }
     });
 
-    abot = ScriptedFunkinSprite.init('ABotAtlasSprite', 0, 0);
+    abot = new ABotAtlasSprite(0, 0);
     abot.x = this.x;
     abot.y = this.y;
     abot.zIndex = this.zIndex - 1;
@@ -101,7 +99,8 @@ class OtisSpeakerCharacter extends AnimateAtlasCharacter
     muzzleFlash.animation.addByPrefix('shoot3', 'shoot forward0', 24, false);
     muzzleFlash.animation.addByPrefix('shoot4', 'shoot forward low0', 24, false);
 
-    muzzleFlash.animation.onFrameChange.add(function() {
+    muzzleFlash.animation.onFrameChange.add(function()
+    {
       updateMuzzle();
     });
 
@@ -158,7 +157,8 @@ class OtisSpeakerCharacter extends AnimateAtlasCharacter
 
     // turns out sorting functions are completely useless in polymod right now and do nothing
     // i had to sort the whole pico chart by hand im gonna go insane
-    animNotes.sort(function(a:SongNoteData, b:SongNoteData):Int {
+    animNotes.sort(function(a:SongNoteData, b:SongNoteData):Int
+    {
       return FlxSort.byValues(FlxSort.ASCENDING, a.time, b.time);
     });
 
@@ -167,6 +167,47 @@ class OtisSpeakerCharacter extends AnimateAtlasCharacter
       shootTimes.push(note.time);
       shootDirs.push(note.data);
     }
+  }
+
+  override public function onAdd(event:ScriptEvent):Void
+  {
+    super.onAdd(event);
+
+    setupAbot();
+  }
+
+  function setupAbot():Void
+  {
+    abot.x = this.x + 170 - (-this.globalOffsets[0] * this.scale.x);
+    abot.y = this.y + 455 - (-this.globalOffsets[1] * this.scale.y);
+    abot.zIndex = this.zIndex - 10;
+
+    currentStage.add(abot);
+
+    abotViz.x = abot.x + 207;
+    abotViz.y = abot.y + 84;
+    abotViz.zIndex = abot.zIndex - 1;
+    currentStage.add(abotViz);
+
+    eyeWhites.x = abot.x + 40;
+    eyeWhites.y = abot.y + 250;
+    eyeWhites.zIndex = abot.zIndex - 10;
+    currentStage.add(eyeWhites);
+
+    pupil.x = abot.x + 50;
+    pupil.y = abot.y + 238;
+    pupil.zIndex = eyeWhites.zIndex + 5;
+    currentStage.add(pupil);
+
+    stereoBG.x = abot.x + 150;
+    stereoBG.y = abot.y + 30;
+    stereoBG.zIndex = abot.zIndex - 8;
+    currentStage.add(stereoBG);
+
+    muzzleFlash.zIndex = this.zIndex - 1;
+    currentStage.add(muzzleFlash);
+
+    currentStage.refresh();
   }
 
   override function onUpdate(event:UpdateScriptEvent):Void
@@ -178,42 +219,6 @@ class OtisSpeakerCharacter extends AnimateAtlasCharacter
     pupil.visible = this.visible;
     eyeWhites.visible = this.visible;
     stereoBG.visible = this.visible;
-
-    // refreshes just for the zIndex shit!
-    if (!refershedLol)
-    {
-      abot.x = this.x + 170 - (-this.globalOffsets[0] * this.scale.x);
-      abot.y = this.y + 455 - (-this.globalOffsets[1] * this.scale.y);
-      abot.zIndex = this.zIndex - 10;
-
-      PlayState.instance.currentStage.add(abot);
-
-      abotViz.x = abot.x + 207;
-      abotViz.y = abot.y + 84;
-      abotViz.zIndex = abot.zIndex - 1;
-      PlayState.instance.currentStage.add(abotViz);
-
-      eyeWhites.x = abot.x + 40;
-      eyeWhites.y = abot.y + 250;
-      eyeWhites.zIndex = abot.zIndex - 10;
-      PlayState.instance.currentStage.add(eyeWhites);
-
-      pupil.x = abot.x + 50;
-      pupil.y = abot.y + 238;
-      pupil.zIndex = eyeWhites.zIndex + 5;
-      PlayState.instance.currentStage.add(pupil);
-
-      stereoBG.x = abot.x + 150;
-      stereoBG.y = abot.y + 30;
-      stereoBG.zIndex = abot.zIndex - 8;
-      PlayState.instance.currentStage.add(stereoBG);
-
-      muzzleFlash.zIndex = this.zIndex - 1;
-      PlayState.instance.currentStage.add(muzzleFlash);
-
-      PlayState.instance.currentStage.refresh();
-      refershedLol = true;
-    }
 
     // Each Pico animation is shifted from the array when it's time to play it.
     while (shootTimes.length > 0 && shootTimes[0] <= Conductor.instance.songPosition)
@@ -277,7 +282,7 @@ class OtisSpeakerCharacter extends AnimateAtlasCharacter
     if (scriptEvent.eventData.eventKind == "FocusCamera")
     {
       var eventProps = scriptEvent.eventData.value;
-      switch (Std.parseInt(eventProps.char))
+      switch (eventProps.char)
       {
         case 0:
           movePupilsRight();

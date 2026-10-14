@@ -1,9 +1,7 @@
-import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.addons.display.FlxRuntimeShader;
 import flixel.sound.FlxSound;
 import funkin.Conductor;
-import funkin.modding.base.ScriptedFlxRuntimeShader;
 import funkin.graphics.shaders.AdjustColorShader;
 import funkin.play.PlayState;
 import funkin.play.stage.Stage;
@@ -72,6 +70,7 @@ class MainStageErectStage extends Stage
   {
     // Apply the shader automatically to each character as it gets added.
     super.addCharacter(character, charType);
+
     trace('Applied stage shader to ' + character.characterName);
     switch (charType)
     {
@@ -82,5 +81,9 @@ class MainStageErectStage extends Stage
       case CharacterType.GF:
         character.shader = colorShaderGf;
     }
+
+    // Enable render texture for Animate Atlas characters
+    // This is so it doesn't run the shader on each individual limb!
+    character.useRenderTexture = true;
   }
 }
