@@ -261,6 +261,10 @@ const CONFIG = {
 
   // Extra files or folders to hide. Example: ["drafts", "old/test.html"]
   hide: [],
+
+  // A text file in your repo listing pages to hide, one per line (see hidden.txt).
+  // Set to null to turn this off.
+  hideFile: "hidden.txt",
 };
 
 /* Add or override pages by hand. All fields except path are optional.
@@ -509,6 +513,28 @@ const PAGES = [
   /* ---------- start ---------- */
   function showNote(html) { $("#note").innerHTML = html ? `<p class="note">${html}</p>` : ""; }
 
+  /* ---------- hidden.txt: one path per line ----------
+     game/index.html   hides that one page
+     gamename.html     hides that one file
+     game/  or  game   hides the folder and every page inside it
+     *                 works as a wildcard (drafts-*, tools/*.html)
+     # starts a comment                                              */
+  async function loadHiddenRules() {
+    if (!CONFIG.hideFile) return [];
+    try {
+      const r = await fetch(CONFIG.hideFile, { cache: "no-cache", credentials: "omit" });
+      if (!r.ok) return [];
+      return (await r.text()).split(/\r?\n/).map((l) => l.trim())
+        .filter((l) => l && !l.startsWith("#"))
+        .map((l) => {
+          const clean = l.replace(/^\.?\//, "").replace(/\/+$/, "");
+          const body = clean.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+          const isFile = /\.html?$/i.test(clean);
+          return new RegExp(isFile ? `^${body}$` : `^${body}(/.*)?$`, "i");
+        });
+    } catch { return []; }
+  }
+
   let loading = false, lastLoad = 0;
   async function load(force) {
     if (loading) return;
@@ -535,7 +561,8 @@ const PAGES = [
       showNote("Automatic page discovery works on <code>github.io</code> addresses. Set <code>CONFIG.repo</code> or fill in <code>PAGES</code> at the top of the script to list pages here.");
     }
 
-    state.pages = mergeManual(auto);
+    const rules = await loadHiddenRules();
+    state.pages = mergeManual(auto).filter((p) => isExternal(p.href) || !rules.some((re) => re.test(p.path)));
     if (state.group !== "All" && !state.pages.some((p) => p.group === state.group)) state.group = "All";
     renderChips();
     render();
