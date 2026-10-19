@@ -262,6 +262,12 @@ const CONFIG = {
   // Extra files or folders to hide. Example: ["drafts", "old/test.html"]
   hide: [],
 
+  // Also lists your OTHER GitHub Pages sites (username.github.io/OtherSite) as cards.
+  // Needs the repo to be detected (see "repo" above). Hide one by adding its repo name to hidden.txt.
+  otherSites: true,
+  otherSitesIncludeForks: false,
+  otherSitesIncludeArchived: false,
+
   // A text file in your repo listing pages to hide, one per line (see hidden.txt).
   // Set to null to turn this off.
   hideFile: "hidden.txt",
@@ -513,6 +519,44 @@ const PAGES = [
   /* ---------- start ---------- */
   function showNote(html) { $("#note").innerHTML = html ? `<p class="note">${html}</p>` : ""; }
 
+  /* ---------- your other Pages sites ---------- */
+  async function discoverSites(owner, selfRepo) {
+    const cacheKey = "pages-sites-v1:" + owner;
+    const cached = store.get(cacheKey);   // fallback if GitHub can't be reached
+    try {
+      let repos = [];
+      for (let page = 1; page <= 5; page++) {
+        const batch = await getJSON(`https://api.github.com/users/${encodeURIComponent(owner)}/repos?per_page=100&page=${page}`);
+        repos = repos.concat(batch);
+        if (batch.length < 100) break;
+      }
+      const sites = repos
+        .filter((r) => r.has_pages && r.full_name.toLowerCase() !== selfRepo.toLowerCase()
+          && (CONFIG.otherSitesIncludeForks || !r.fork)
+          && (CONFIG.otherSitesIncludeArchived || !r.archived))
+        .map((r) => ({ name: r.name, description: r.description || "" }));
+      store.set(cacheKey, { at: Date.now(), sites });
+      return sites;
+    } catch (e) {
+      if (cached) return cached.sites;
+      throw e;
+    }
+  }
+
+  function siteCard(owner, r) {
+    const host = `${owner.toLowerCase()}.github.io`;
+    const isUserSite = r.name.toLowerCase() === host;
+    return {
+      path: r.name,
+      href: isUserSite ? `https://${host}/` : `https://${host}/${encodeURIComponent(r.name)}/`,
+      title: isUserSite ? r.name : prettify(r.name),
+      description: r.description,
+      group: "Other sites",
+      site: true,
+      hue: hueOf(r.name),
+    };
+  }
+
   /* ---------- hidden.txt: one path per line ----------
      game/index.html   hides that one page
      gamename.html     hides that one file
@@ -541,7 +585,7 @@ const PAGES = [
     loading = true;
     const btn = $("#refreshBtn");
     btn.disabled = true; btn.textContent = "Checking…";
-    let auto = [];
+    let auto = [], sites = [];
     const repo = CONFIG.autoDiscover ? detectRepo() : null;
     showNote("");
 
@@ -557,12 +601,22 @@ const PAGES = [
           ? "<strong>GitHub’s request limit was hit,</strong> so only hand-added pages are showing. Try again in a little while."
           : `<strong>Couldn’t read the file list for <code>${esc(repo)}</code>.</strong> If the repo is private or the name is different, set <code>CONFIG.repo</code> at the top of the script.`);
       }
+      if (CONFIG.otherSites) {
+        try { sites = await discoverSites(repo.split("/")[0], repo); } catch {}
+      }
     } else if (CONFIG.autoDiscover && !PAGES.length) {
       showNote("Automatic page discovery works on <code>github.io</code> addresses. Set <code>CONFIG.repo</code> or fill in <code>PAGES</code> at the top of the script to list pages here.");
     }
 
     const rules = await loadHiddenRules();
-    state.pages = mergeManual(auto).filter((p) => isExternal(p.href) || !rules.some((re) => re.test(p.path)));
+    const merged = mergeManual(auto);
+    const have = new Set(merged.map((p) => p.href.replace(/\/$/, "")));
+    const owner = repo ? repo.split("/")[0] : "";
+    for (const r of sites) {
+      const card = siteCard(owner, r);
+      if (!have.has(card.href.replace(/\/$/, ""))) merged.push(card);
+    }
+    state.pages = merged.filter((p) => (isExternal(p.href) && !p.site) || !rules.some((re) => re.test(p.path)));
     if (state.group !== "All" && !state.pages.some((p) => p.group === state.group)) state.group = "All";
     renderChips();
     render();
